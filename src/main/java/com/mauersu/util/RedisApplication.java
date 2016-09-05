@@ -2,9 +2,7 @@ package com.mauersu.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Semaphore;
@@ -21,69 +19,70 @@ import com.mauersu.exception.ConcurrentException;
 import com.mauersu.util.redis.MyStringRedisTemplate;
 import com.mauersu.util.ztree.RedisZtreeUtil;
 
-public abstract class RedisApplication implements Constant{
+public abstract class RedisApplication implements Constant {
 
 	private static Log log = LogFactory.getLog(RedisApplication.class);
-	
+
 	public static volatile RefreshModeEnum refreshMode = RefreshModeEnum.manually;
 	public static volatile ShowTypeEnum showType = ShowTypeEnum.show;
 	public static String BASE_PATH = "/redis-admin";
-	
+
 	protected volatile Semaphore limitUpdate = new Semaphore(1);
-	protected static final int LIMIT_TIME = 3; //unit : second
-	
+	protected static final int LIMIT_TIME = 3; // unit : second
+
 	public static ThreadLocal<Integer> redisConnectionDbIndex = new ThreadLocal<Integer>() {
 		@Override
 		protected Integer initialValue() {
 			return 0;
 		}
 	};
-	
+
 	protected static ThreadLocal<Semaphore> updatePermition = new ThreadLocal<Semaphore>() {
 		@Override
 		protected Semaphore initialValue() {
 			return null;
 		}
 	};
-	
+
 	protected static ThreadLocal<Long> startTime = new ThreadLocal<Long>() {
 		protected Long initialValue() {
 			return 0l;
 		}
 	};
-	
+
 	private Semaphore getSempahore() {
 		startTime.set(System.currentTimeMillis());
 		updatePermition.set(limitUpdate);
 		return updatePermition.get();
-		
+
 	}
+
 	protected boolean getUpdatePermition() {
 		Semaphore sempahore = getSempahore();
 		boolean permit = sempahore.tryAcquire(1);
 		return permit;
 	}
-	
+
 	protected void finishUpdate() {
 		Semaphore semaphore = updatePermition.get();
-		if(semaphore==null) {
+		if (semaphore == null) {
 			throw new ConcurrentException("semaphore==null");
 		}
 		final Semaphore fsemaphore = semaphore;
 		new Thread(new Runnable() {
-			
+
 			Semaphore RSemaphore;
 			{
 				RSemaphore = fsemaphore;
 			}
-			
+
 			@Override
 			public void run() {
 				long start = startTime.get();
 				long now = System.currentTimeMillis();
 				try {
 					long needWait = start + LIMIT_TIME * 1000 - now;
-					if(needWait > 0L) {
+					if (needWait > 0L) {
 						Thread.sleep(needWait);
 					}
 				} catch (InterruptedException e) {
@@ -94,57 +93,43 @@ public abstract class RedisApplication implements Constant{
 			}
 		}).start();
 	}
-	
-	//this idea is not good
-	/*protected void runUpdateLimit() {
-		new Thread(new Runnable () {
-			@Override
-			public void run() {
-				while(true) {
-					try {
-						Thread.sleep(LIMIT_TIME * 1000);
-						limitUpdate = new Semaphore(1);
-					} catch(InterruptedException e) {
-						log.warn("runUpdateLimit 's new semaphore thread had be interrupted");
-						break;
-					}
-				}
-			}
-		}).start();
-	}*/
-	
-	protected void createRedisConnection(String name, String host, int port, String password) {
+
+	// this idea is not good
+	/*
+	 * protected void runUpdateLimit() { new Thread(new Runnable () {
+	 * 
+	 * @Override public void run() { while(true) { try { Thread.sleep(LIMIT_TIME
+	 * * 1000); limitUpdate = new Semaphore(1); } catch(InterruptedException e)
+	 * { log.warn("runUpdateLimit 's new semaphore thread had be interrupted");
+	 * break; } } } }).start(); }
+	 */
+
+	protected void createRedisConnection(ServerInfo serverInfo) {
 		JedisConnectionFactory connectionFactory = new JedisConnectionFactory();
-		connectionFactory.setHostName(host);
-		connectionFactory.setPort(port);
-		if(!StringUtils.isEmpty(password))
-			connectionFactory.setPassword(password);
+		connectionFactory.setHostName(serverInfo.getHost());
+		connectionFactory.setPort(serverInfo.getPort());
+		if (!StringUtils.isEmpty(serverInfo.getPassword()))
+			connectionFactory.setPassword(serverInfo.getPassword());
 		connectionFactory.afterPropertiesSet();
 		RedisTemplate redisTemplate = new MyStringRedisTemplate();
 		redisTemplate.setConnectionFactory(connectionFactory);
 		redisTemplate.afterPropertiesSet();
-		RedisApplication.redisTemplatesMap.put(name, redisTemplate);
-		
-		Map<String, Object> redisServerMap = new HashMap<String, Object>();
-		redisServerMap.put("name", name);
-		redisServerMap.put("host", host);
-		redisServerMap.put("port", port);
-		redisServerMap.put("password", password);
-		RedisApplication.redisServerCache.add(redisServerMap);
-		
-		initRedisKeysCache(redisTemplate, name);
-		
-		RedisZtreeUtil.initRedisNavigateZtree(name);
+		RedisApplication.redisTemplatesMap.put(serverInfo.getName(), redisTemplate);
+
+		RedisApplication.redisServerCache.add(serverInfo);
+
+		initRedisKeysCache(redisTemplate, serverInfo.getName());
+
+		RedisZtreeUtil.initRedisNavigateZtree(serverInfo.getName());
 	}
-	
+
 	private void initRedisKeysCache(RedisTemplate redisTemplate, String name) {
-		for(int i=0;i<=REDIS_DEFAULT_DB_SIZE;i++) {
+		for (int i = 0; i <= REDIS_DEFAULT_DB_SIZE; i++) {
 			initRedisKeysCache(redisTemplate, name, i);
 		}
 	}
-	
-	
-	protected void initRedisKeysCache(RedisTemplate redisTemplate, String serverName , int dbIndex) {
+
+	protected void initRedisKeysCache(RedisTemplate redisTemplate, String serverName, int dbIndex) {
 		RedisConnection connection = RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
 		connection.select(dbIndex);
 		Set<byte[]> keysSet = connection.keys("*".getBytes());
@@ -153,12 +138,12 @@ public abstract class RedisApplication implements Constant{
 		ConvertUtil.convertByteToString(connection, keysSet, tempList);
 		Collections.sort(tempList);
 		CopyOnWriteArrayList<RKey> redisKeysList = new CopyOnWriteArrayList<RKey>(tempList);
-		if(redisKeysList.size()>0) {
-			redisKeysListMap.put(serverName+DEFAULT_SEPARATOR+dbIndex, redisKeysList);
+		if (redisKeysList.size() > 0) {
+			redisKeysListMap.put(serverName + DEFAULT_SEPARATOR + dbIndex, redisKeysList);
 		}
 	}
-	
+
 	protected static void logCurrentTime(String code) {
-		log.debug("       code:"+code+"        当前时间:" + System.currentTimeMillis());
+		log.debug("       code:" + code + "        当前时间:" + System.currentTimeMillis());
 	}
 }

@@ -16,7 +16,7 @@ public interface Constant {
 	public static final Map<String, CopyOnWriteArrayList<RKey>> redisKeysListMap = new HashMap<String, CopyOnWriteArrayList<RKey>>();
 	public static final Map<RKey, Object> redisVMCache = new ConcurrentHashMap<RKey, Object>();
 	public static final CopyOnWriteArrayList<ZNode> redisNavigateZtree = new CopyOnWriteArrayList<ZNode>();
-	public static final CopyOnWriteArrayList<Map<String, Object>> redisServerCache = new CopyOnWriteArrayList<Map<String, Object>>();
+	public static final CopyOnWriteArrayList<ServerInfo> redisServerCache = new CopyOnWriteArrayList<ServerInfo>();
 
 	public static final int DEFAULT_ITEMS_PER_PAGE = 10;
 	public static final String DEFAULT_REDISKEY_SEPARATOR = ":";
