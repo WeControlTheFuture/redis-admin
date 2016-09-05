@@ -1,9 +1,13 @@
 package com.mauersu.util;
 
+/**
+ * 刷新方式: 自动;手动
+ * @author bixy2
+ *
+ */
 public enum RefreshModeEnum {
 	auto("auto", "Auto refresh"),
-	manually("manually", "Manually refresh"),
-	;
+	manually("manually", "Manually refresh");
 	
 	String name;
 	String label;

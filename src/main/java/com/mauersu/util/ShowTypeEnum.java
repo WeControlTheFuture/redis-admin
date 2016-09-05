@@ -1,5 +1,10 @@
 package com.mauersu.util;
 
+/**
+ * 显示类型：显示；隐藏
+ * @author bixy2
+ *
+ */
 public enum ShowTypeEnum {
 	show("show", "hide"),
 	hide("hide", "show"),
