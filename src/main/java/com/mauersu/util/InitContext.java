@@ -25,27 +25,38 @@ import com.mauersu.util.ztree.RedisZtreeUtil;
 
 @Service
 @SuppressWarnings("rawtypes")
-public class InitContext extends RedisApplication implements Constant  {
+public class InitContext extends RedisApplication implements Constant {
 
 	private static Log log = LogFactory.getLog(InitContext.class);
-	
+
 	@Autowired
 	private Environment env;
-	
+
 	@PostConstruct
 	public void initRedisServers() {
 		String currentServerName = "";
 		try {
-			int serverNum = Integer.parseInt(env.getProperty(REDISPROPERTIES_SERVER_NUM_KEY));
-			for(int i=1;i<=serverNum;i++) {
-				String name = env.getProperty(REDISPROPERTIES_NAME_PROFIXKEY + i);
-				String host = env.getProperty(REDISPROPERTIES_HOST_PROFIXKEY + i);
-				int port = Integer.parseInt(env.getProperty(REDISPROPERTIES_PORT_PROFIXKEY + i));
-				String password = env.getProperty(REDISPROPERTIES_PASSWORD_PROFIXKEY + i);
-				currentServerName = host;
-				createRedisConnection(name, host, port, password);
-				
-				//runUpdateLimit();
+			String isCluster = env.getProperty(REDIS_IS_CLUSTER);
+			if(isCluster !=null){
+				boolean isRedisCluster = Boolean.parseBoolean(isCluster);
+				if(isRedisCluster){
+					// init redis cluster
+				}
+				else{
+					// init redis standalone
+					int serverNum = Integer.parseInt(env.getProperty(REDISPROPERTIES_SERVER_NUM_KEY));
+					
+					for(int i=1;i<=serverNum;i++) {
+						String name = env.getProperty(REDISPROPERTIES_NAME_PROFIXKEY + i);
+						String host = env.getProperty(REDISPROPERTIES_HOST_PROFIXKEY + i);
+						int port = Integer.parseInt(env.getProperty(REDISPROPERTIES_PORT_PROFIXKEY + i));
+						String password = env.getProperty(REDISPROPERTIES_PASSWORD_PROFIXKEY + i);
+						currentServerName = host;
+						createRedisConnection(name, host, port, password);
+						
+						//runUpdateLimit();
+					}
+				}
 			}
 		} catch (NumberFormatException e) {
 			log.error("initRedisServers: " + currentServerName+" occur NumberFormatException :" + e.getMessage());
@@ -55,5 +66,5 @@ public class InitContext extends RedisApplication implements Constant  {
 			throw new RedisInitException(currentServerName + " init failed", e1);
 		}
 	}
-	
+
 }
