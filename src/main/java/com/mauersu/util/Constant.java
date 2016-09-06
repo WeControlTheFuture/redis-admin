@@ -7,13 +7,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.data.redis.core.RedisTemplate;
 
+import com.mauersu.redis.IRedisClient;
 import com.mauersu.util.ztree.ZNode;
 
 @SuppressWarnings("rawtypes")
 public interface Constant {
 
-	public static final Map<String, RedisTemplate> redisTemplatesMap = new HashMap<String, RedisTemplate>();
-	public static final Map<String, CopyOnWriteArrayList<RKey>> redisKeysListMap = new HashMap<String, CopyOnWriteArrayList<RKey>>();
+	public static final Map<String, IRedisClient> redisTemplatesMap = new HashMap<String, IRedisClient>();
+	public static final Map<String, CopyOnWriteArrayList<String>> redisKeysListMap = new HashMap<String, CopyOnWriteArrayList<String>>();
 	public static final Map<RKey, Object> redisVMCache = new ConcurrentHashMap<RKey, Object>();
 	public static final CopyOnWriteArrayList<ZNode> redisNavigateZtree = new CopyOnWriteArrayList<ZNode>();
 	public static final CopyOnWriteArrayList<ServerInfo> redisServerCache = new CopyOnWriteArrayList<ServerInfo>();
@@ -28,9 +29,8 @@ public interface Constant {
 	public static final String REDISCLUSTERPROPERTIES_SERVER_NUM_KEY = "redis.cluster.server.num";
 	public static final String REDISCLUSTERPROPERTIES_LANGUAGE_KEY = "redis.cluster.language";
 
-	public static final String REDISCLUSTERPROPERTIES_HOST_PROFIXKEY = "redis.cluster.host.";
+	public static final String REDISCLUSTERPROPERTIES_HOST_AND_PORT_PROFIXKEY = "redis.cluster.host.and.port";
 	public static final String REDISCLUSTERPROPERTIES_NAME_PROFIXKEY = "redis.cluster.name.";
-	public static final String REDISCLUSTERPROPERTIES_PORT_PROFIXKEY = "redis.cluster.port.";
 	public static final String REDISCLUSTERPROPERTIES_PASSWORD_PROFIXKEY = "redis.cluster.password.";
 	/** redis properties key **/
 	public static final String REDISPROPERTIES_SERVER_NUM_KEY = "redis.server.num";

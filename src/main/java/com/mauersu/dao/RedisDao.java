@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
 
+import com.mauersu.redis.IRedisClient;
 import com.mauersu.util.RValue;
 import com.mauersu.util.RedisApplication;
 
@@ -25,9 +26,9 @@ public class RedisDao extends RedisApplication {
 	//--- SET 
 	public void addSTRING(String serverName, int dbIndex, String key,
 			String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForValue().set(key, value);
+		redisTemplate.set(key, value);
 	}
 	
 	public void addLIST(String serverName, int dbIndex, String key,

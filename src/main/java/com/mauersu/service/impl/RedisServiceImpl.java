@@ -4,13 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisConnectionUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.mauersu.dao.RedisDao;
+import com.mauersu.redis.IRedisClient;
 import com.mauersu.service.RedisService;
 import com.mauersu.util.RedisApplication;
-import com.mauersu.util.ServerInfo;
+import com.mauersu.util.SingleServerInfo;
 
 import cn.workcenter.common.WorkcenterCodeEnum;
 import cn.workcenter.common.WorkcenterResult;
@@ -24,7 +24,7 @@ public class RedisServiceImpl extends RedisApplication implements RedisService, 
 
 	@Override
 	public void addRedisServer(String name, String host, int port, String password) {
-		createRedisConnection(new ServerInfo(name, host, port, password));
+		createRedisConnection(new SingleServerInfo(name, host, port, password));
 	}
 
 	@Override
@@ -90,7 +90,7 @@ public class RedisServiceImpl extends RedisApplication implements RedisService, 
 	}
 
 	private String getDataType(String serverName, int dbIndex, String key) {
-		RedisTemplate redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
+		IRedisClient redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
 		RedisConnection connection = RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
 		connection.select(dbIndex);
 		DataType dataType = connection.type(key.getBytes());
@@ -99,7 +99,7 @@ public class RedisServiceImpl extends RedisApplication implements RedisService, 
 	}
 
 	private Object getKV(String serverName, int dbIndex, String key) {
-		RedisTemplate redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
+		IRedisClient redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
 		RedisConnection connection = RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
 		connection.select(dbIndex);
 		DataType dataType = connection.type(key.getBytes());

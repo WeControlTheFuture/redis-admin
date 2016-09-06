@@ -10,13 +10,12 @@ import java.util.concurrent.Semaphore;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisConnectionUtils;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.util.StringUtils;
 
 import com.mauersu.exception.ConcurrentException;
-import com.mauersu.util.redis.MyStringRedisTemplate;
+import com.mauersu.redis.IRedisClient;
+import com.mauersu.redis.RedisClusterClient;
 import com.mauersu.util.ztree.RedisZtreeUtil;
 
 public abstract class RedisApplication implements Constant {
@@ -104,40 +103,52 @@ public abstract class RedisApplication implements Constant {
 	 * break; } } } }).start(); }
 	 */
 
-	protected void createRedisConnection(ServerInfo serverInfo) {
-		JedisConnectionFactory connectionFactory = new JedisConnectionFactory();
-		connectionFactory.setHostName(serverInfo.getHost());
-		connectionFactory.setPort(serverInfo.getPort());
-		if (!StringUtils.isEmpty(serverInfo.getPassword()))
-			connectionFactory.setPassword(serverInfo.getPassword());
-		connectionFactory.afterPropertiesSet();
-		RedisTemplate redisTemplate = new MyStringRedisTemplate();
-		redisTemplate.setConnectionFactory(connectionFactory);
-		redisTemplate.afterPropertiesSet();
-		RedisApplication.redisTemplatesMap.put(serverInfo.getName(), redisTemplate);
+	protected void createRedisClusterConnection(ClusterServerInfo clusterServerInfo) {
+		IRedisClient redisClient = new RedisClusterClient(clusterServerInfo.getServers());
+		RedisApplication.redisTemplatesMap.put(clusterServerInfo.getName(), redisClient);
+		RedisApplication.redisServerCache.add(clusterServerInfo);
+		RedisZtreeUtil.initRedisNavigateZtree(clusterServerInfo.getName());
+	}
+
+	protected void createRedisConnection(SingleServerInfo serverInfo) {
+		// JedisConnectionFactory connectionFactory = new
+		// JedisConnectionFactory();
+		// connectionFactory.setHostName(serverInfo.getHost());
+		// connectionFactory.setPort(serverInfo.getPort());
+		// if (!StringUtils.isEmpty(serverInfo.getPassword()))
+		// connectionFactory.setPassword(serverInfo.getPassword());
+		// connectionFactory.afterPropertiesSet();
+		// RedisTemplate redisTemplate = new MyStringRedisTemplate();
+		// redisTemplate.setConnectionFactory(connectionFactory);
+		// redisTemplate.afterPropertiesSet();
+
+		// IRedisClient redisClient = new
+		// RedisApplication.redisTemplatesMap.put(serverInfo.getName(),
+		// redisTemplate);
 
 		RedisApplication.redisServerCache.add(serverInfo);
 
-		initRedisKeysCache(redisTemplate, serverInfo.getName());
+		// initRedisKeysCache(redisTemplate, serverInfo.getName());
 
 		RedisZtreeUtil.initRedisNavigateZtree(serverInfo.getName());
 	}
 
-	private void initRedisKeysCache(RedisTemplate redisTemplate, String name) {
+	private void initRedisKeysCache(IRedisClient redisClient, String name) {
 		for (int i = 0; i <= REDIS_DEFAULT_DB_SIZE; i++) {
-			initRedisKeysCache(redisTemplate, name, i);
+			initRedisKeysCache(redisClient, name, i);
 		}
 	}
 
-	protected void initRedisKeysCache(RedisTemplate redisTemplate, String serverName, int dbIndex) {
-		RedisConnection connection = RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
-		connection.select(dbIndex);
-		Set<byte[]> keysSet = connection.keys("*".getBytes());
-		connection.close();
-		List<RKey> tempList = new ArrayList<RKey>();
-		ConvertUtil.convertByteToString(connection, keysSet, tempList);
-		Collections.sort(tempList);
-		CopyOnWriteArrayList<RKey> redisKeysList = new CopyOnWriteArrayList<RKey>(tempList);
+	protected void initRedisKeysCache(IRedisClient redisClient, String serverName, int dbIndex) {
+		// RedisConnection connection =
+		// RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
+		// connection.select(dbIndex);
+		Set<String> keysSet = redisClient.keys("*");
+		// connection.close();
+		// List<RKey> tempList = new ArrayList<RKey>();
+		// ConvertUtil.convertByteToString(connection, keysSet, tempList);
+		// Collections.sort(tempList);
+		CopyOnWriteArrayList<String> redisKeysList = new CopyOnWriteArrayList<String>(keysSet);
 		if (redisKeysList.size() > 0) {
 			redisKeysListMap.put(serverName + DEFAULT_SEPARATOR + dbIndex, redisKeysList);
 		}

@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.mauersu.util.Constant;
-import com.mauersu.util.RKey;
 
 public class RedisZtreeUtil implements Constant{
 
@@ -51,11 +50,11 @@ public class RedisZtreeUtil implements Constant{
 		
 	protected static ZNode getRedisNavigateZtree(String serverName, int dbIndex) {
 		ZNode dbIndexZnode = ZNode.makeZNode(dbIndex+"", new RedisAttach(serverName, dbIndex));
-		CopyOnWriteArrayList<RKey> redisKeysList = redisKeysListMap.get(serverName+DEFAULT_SEPARATOR+dbIndex);
+		CopyOnWriteArrayList<String> redisKeysList = redisKeysListMap.get(serverName+DEFAULT_SEPARATOR+dbIndex);
 		if(redisKeysList==null||redisKeysList.size()==0) {
 			return null;
 		}
-		for(RKey rkey: redisKeysList) {
+		for(String rkey: redisKeysList) {
 			if(rkey.contains(DEFAULT_REDISKEY_SEPARATOR)) {
 				String[] prefixs = rkey.split(DEFAULT_REDISKEY_SEPARATOR);
 				findParentAndSetChild(dbIndexZnode, serverName, dbIndex, prefixs, 0);

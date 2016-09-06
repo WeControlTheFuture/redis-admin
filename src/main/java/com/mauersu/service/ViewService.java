@@ -10,7 +10,7 @@ public interface ViewService {
 
 	Set<ZNode> getLeftTree();
 
-	Set<RKey> getRedisKeys(Pagination pagination, String serverName, String dbIndex,
+	Set<String> getRedisKeys(Pagination pagination, String serverName, String dbIndex,
 			String[] keyPrefixs, String queryKey, String queryValue);
 
 	Set<ZNode> refresh();
