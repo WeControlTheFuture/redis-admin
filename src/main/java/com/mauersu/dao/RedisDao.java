@@ -1,7 +1,6 @@
 package com.mauersu.dao;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
 
@@ -19,217 +17,203 @@ import com.mauersu.util.RedisApplication;
 
 @Service
 public class RedisDao extends RedisApplication {
-	
+
 	@Autowired
 	RedisTemplateFactory redisTemplateFactory;
-	
-	//--- SET 
-	public void addSTRING(String serverName, int dbIndex, String key,
-			String value) {
+
+	// --- SET
+	public void addSTRING(String serverName, int dbIndex, String key, String value) {
 		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		redisTemplate.set(key, value);
 	}
-	
-	public void addLIST(String serverName, int dbIndex, String key,
-			String[] values) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+
+	public void addLIST(String serverName, int dbIndex, String key, String[] values) {
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForList().rightPushAll(key, values);
-	}
-	
-	public void addSET(String serverName, int dbIndex, String key,
-			String[] values) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
-		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForSet().add(key, values);
+		redisTemplate.rightPushAll(key, values);
 	}
 
-	public void addZSET(String serverName, int dbIndex, String key,
-			double[] scores, String[] members) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+	public void addSET(String serverName, int dbIndex, String key, String[] values) {
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		redisConnectionDbIndex.set(dbIndex);
+		redisTemplate.sadd(key, values);
+	}
+
+	public void addZSET(String serverName, int dbIndex, String key, double[] scores, String[] members) {
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		Set<TypedTuple<Object>> zset = new HashSet<TypedTuple<Object>>();
-		for(int i=0;i<members.length;i++) {
+		for (int i = 0; i < members.length; i++) {
 			final Object ob = members[i];
 			final double sc = scores[i];
-			zset.add(new TypedTuple () {
+			zset.add(new TypedTuple() {
 				private Object v;
 				private double score;
 				{
 					v = ob;
 					score = sc;
 				}
+
 				@Override
 				public int compareTo(Object o) {
-					if(o == null) return 1;
-					if(o instanceof TypedTuple) {
+					if (o == null)
+						return 1;
+					if (o instanceof TypedTuple) {
 						TypedTuple tto = (TypedTuple) o;
-						return this.getScore()-tto.getScore() >= 0?1:-1;
+						return this.getScore() - tto.getScore() >= 0 ? 1 : -1;
 					}
 					return 1;
 				}
+
 				@Override
 				public Object getValue() {
 					return v;
 				}
+
 				@Override
 				public Double getScore() {
 					return score;
 				}
 			});
 		}
-		redisTemplate.opsForZSet().add(key, zset);
+		redisTemplate.zadd(key, zset);
 	}
-	
-	public void addHASH(String serverName, int dbIndex, String key,
-			String[] fields, String[] values) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+
+	public void addHASH(String serverName, int dbIndex, String key, String[] fields, String[] values) {
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		Map<String, String> hashmap = new HashMap<String, String>();
-		
-		for(int i=0;i<fields.length;i++) {
+
+		for (int i = 0; i < fields.length; i++) {
 			String field = fields[i];
 			String value = values[i];
 			hashmap.put(field, value);
 		}
-		redisTemplate.opsForHash().putAll(key, hashmap);
+		redisTemplate.hmset(key, hashmap);
 	}
 
-	//--- GET 
+	// --- GET
 	public Object getSTRING(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisClient = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		final Object value = redisTemplate.opsForValue().get(key);
+		final Object value = redisClient.get(key);
 		List list = new ArrayList();
 		list.add(new RValue(value));
 		return list;
 	}
-	
+
 	public Object getLIST(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		List<Object> values = redisTemplate.opsForList().range(key, 0, 1000);
+		List<Object> values = redisTemplate.lrange(key, 0, 1000);
 		return RValue.creatListValue(values);
 	}
 
 	public Object getSET(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		List<Object> values = redisTemplate.opsForSet().randomMembers(key, 1000);
-		//Set<Object> values = redisTemplate.opsForSet().members(key);
+		List<Object> values = redisTemplate.srandmembers(key, 1000);
+		// Set<Object> values = redisTemplate.opsForSet().members(key);
 		return RValue.creatSetValue(new HashSet(values));
 	}
 
 	public Object getZSET(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		Set<TypedTuple<Object>> values = redisTemplate.opsForZSet().rangeWithScores(key, 0, 1000);
+		Set<TypedTuple<Object>> values = redisTemplate.zrangebyscore(key, 0, 1000);
 		return RValue.creatZSetValue(values);
 	}
 
 	public Object getHASH(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		Map<Object, Object> values = redisTemplate.opsForHash().entries(key);
+		Map<Object, Object> values = redisTemplate.hgetall(key);
 		return RValue.creatHashValue(values);
 	}
 
-	//--- delete
+	// --- delete
 	public void delRedisKeys(String serverName, int dbIndex, String deleteKeys) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		String[] keys = deleteKeys.split(",");
-		redisTemplate.delete(Arrays.asList(keys));
-		return;
+		redisTemplate.del(keys);
 	}
-	
+
 	public void delRedisHashField(String serverName, int dbIndex, String key, String field) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		List<String> hashKeys = new ArrayList<String>();
 		hashKeys.add(field);
-		redisTemplate.opsForHash().delete(key, hashKeys.toArray());
-		return;
+		redisTemplate.hdel(key, hashKeys);
 	}
 
 	public void updateHashField(String serverName, int dbIndex, String key, String field, String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		String hashKey = field;
-		redisTemplate.opsForHash().put(key, hashKey, value);
-		return;
+		redisTemplate.hset(key, hashKey, value);
 	}
 
 	public void delSetValue(String serverName, int dbIndex, String key, String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForSet().remove(key, value);
-		return;
+		redisTemplate.srem(key, value);
 	}
 
 	public void updateSetValue(String serverName, int dbIndex, String key, String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForSet().add(key, value);
-		return;
+		redisTemplate.sadd(key, value);
 	}
-	
+
 	public void delZSetValue(String serverName, int dbIndex, String key, String member) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		String value = member;
-		redisTemplate.opsForZSet().remove(key, value);
-		return;
+		redisTemplate.zrem(key, value);
 	}
 
 	public void updateZSetValue(String serverName, int dbIndex, String key, double score, String member) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
 		String value = member;
-		redisTemplate.opsForZSet().add(key, value, score);
-		return;
+		redisTemplate.zadd(key, value, score);
 	}
-	
+
 	public void ldelListValue(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForList().leftPop(key);
-		return;
+		redisTemplate.lpop(key);
 	}
-	
+
 	public void rdelListValue(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForList().rightPop(key);
-		return;
+		redisTemplate.rpop(key);
 	}
 
 	public void lupdateListValue(String serverName, int dbIndex, String key, String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForList().leftPush(key, value);
-		return;
+		redisTemplate.lpush(key, value);
 	}
-	
+
 	public void rupdateListValue(String serverName, int dbIndex, String key, String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForList().rightPush(key, value);
-		return;
+		redisTemplate.rpush(key, value);
 	}
 
 	public void delRedisValue(String serverName, int dbIndex, String key) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForValue().set(key, "");
-		return;
+		redisTemplate.del(key);
 	}
 
 	public void updateValue(String serverName, int dbIndex, String key, String value) {
-		RedisTemplate<String, Object> redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
+		IRedisClient redisTemplate = redisTemplateFactory.getRedisTemplate(serverName);
 		redisConnectionDbIndex.set(dbIndex);
-		redisTemplate.opsForValue().set(key, value);
-		return;
+		redisTemplate.set(key, value);
 	}
 }

@@ -3,6 +3,7 @@ package com.mauersu.redis;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -250,18 +251,18 @@ public class RedisClusterClient implements IRedisClient {
 		}
 	}
 
-	public Long sadd(String key, String... value) {
-		try {
-			return objectJedisCluster.sadd(key, value);
-		} catch (JedisClusterException jcException) {
-			getCluster();
-			if (canConnection()) {
-				return sadd(key, value);
-			}
-			// log.error(jcException.getMessage(), jcException);
-			throw jcException;
-		}
-	}
+//	public Long sadd(String key, String... value) {
+//		try {
+//			return objectJedisCluster.sadd(key, value);
+//		} catch (JedisClusterException jcException) {
+//			getCluster();
+//			if (canConnection()) {
+//				return sadd(key, value);
+//			}
+//			// log.error(jcException.getMessage(), jcException);
+//			throw jcException;
+//		}
+//	}
 
 	public Set<String> smembers(final String key) {
 		try {
@@ -276,16 +277,137 @@ public class RedisClusterClient implements IRedisClient {
 		}
 	}
 
-	public Long srem(final String key, final String... value) {
+//	public Long srem(final String key, final String... value) {
+//		try {
+//			return objectJedisCluster.srem(key, value);
+//		} catch (JedisClusterException jcException) {
+//			getCluster();
+//			if (canConnection()) {
+//				return srem(key, value);
+//			}
+//			// log.error(jcException.getMessage(), jcException);
+//			throw jcException;
+//		}
+//	}
+
+	public String type(final String key) {
 		try {
-			return objectJedisCluster.srem(key, value);
+			return objectJedisCluster.type(key.getBytes());
 		} catch (JedisClusterException jcException) {
 			getCluster();
 			if (canConnection()) {
-				return srem(key, value);
+				return type(key);
 			}
 			// log.error(jcException.getMessage(), jcException);
 			throw jcException;
 		}
+	}
+
+	@Override
+	public void rightPushAll(String key, String[] values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void sadd(String key, String... values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void zadd(String key, Set values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void zadd(String key, String value, double score) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void hmset(String key, Map values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public List<Object> lrange(String key, int start, int end) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<Object> srandmembers(String key, int count) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Set zrangebyscore(String key, int start, int end) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Map hgetall(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void del(String... keys) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void hdel(String key, List<String> hashKeys) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void hset(String key, String field, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void srem(String key, String... fields) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void zrem(String key, String... fields) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Object lpop(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object rpop(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void lpush(String key, String... values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void rpush(String key, String... values) {
+		// TODO Auto-generated method stub
+		
 	}
 }

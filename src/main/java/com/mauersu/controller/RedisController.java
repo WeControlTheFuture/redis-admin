@@ -14,19 +14,18 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import cn.workcenter.common.WorkcenterResult;
-import cn.workcenter.common.response.WorkcenterResponseBodyJson;
-import cn.workcenter.common.util.StringUtil;
-
 import com.mauersu.service.RedisService;
 import com.mauersu.service.ViewService;
 import com.mauersu.util.Constant;
 import com.mauersu.util.ConvertUtil;
 import com.mauersu.util.Pagination;
 import com.mauersu.util.QueryEnum;
-import com.mauersu.util.RKey;
 import com.mauersu.util.RedisApplication;
 import com.mauersu.util.ztree.ZNode;
+
+import cn.workcenter.common.WorkcenterResult;
+import cn.workcenter.common.response.WorkcenterResponseBodyJson;
+import cn.workcenter.common.util.StringUtil;
 
 @Controller
 @RequestMapping("/redis")
@@ -132,7 +131,7 @@ public class RedisController extends RedisApplication implements Constant {
 		Pagination pagination = stringListPagination(request, queryKey, queryKey_ch, queryValue, queryByKeyPrefixs);
 
 		logCurrentTime("viewService.getRedisKeys start");
-		Set<RKey> redisKeys = viewService.getRedisKeys(pagination, serverName, dbIndex, keyPrefixs, queryKey,
+		Set<String> redisKeys = viewService.getRedisKeys(pagination, serverName, dbIndex, keyPrefixs, queryKey,
 				queryValue);
 		logCurrentTime("viewService.getRedisKeys end");
 		request.setAttribute("redisServers", redisServerCache);

@@ -2,8 +2,6 @@ package com.mauersu.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.DataType;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.RedisConnectionUtils;
 import org.springframework.stereotype.Service;
 
 import com.mauersu.dao.RedisDao;
@@ -90,20 +88,14 @@ public class RedisServiceImpl extends RedisApplication implements RedisService, 
 	}
 
 	private String getDataType(String serverName, int dbIndex, String key) {
-		IRedisClient redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
-		RedisConnection connection = RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
-		connection.select(dbIndex);
-		DataType dataType = connection.type(key.getBytes());
-		connection.close();
+		IRedisClient redisClient = RedisApplication.redisTemplatesMap.get(serverName);
+		DataType dataType = DataType.fromCode(redisClient.type(key));
 		return dataType.name().toUpperCase();
 	}
 
 	private Object getKV(String serverName, int dbIndex, String key) {
-		IRedisClient redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
-		RedisConnection connection = RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
-		connection.select(dbIndex);
-		DataType dataType = connection.type(key.getBytes());
-		connection.close();
+		IRedisClient redisClient = RedisApplication.redisTemplatesMap.get(serverName);
+		DataType dataType = DataType.fromCode(redisClient.type(key));
 		Object values = null;
 		switch (dataType) {
 		case STRING:

@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import com.mauersu.exception.ConcurrentException;
 import com.mauersu.redis.IRedisClient;
+import com.mauersu.redis.RedisClient;
 import com.mauersu.redis.RedisClusterClient;
 import com.mauersu.util.ztree.RedisZtreeUtil;
 
@@ -127,7 +128,8 @@ public abstract class RedisApplication implements Constant {
 		// redisTemplate);
 
 		RedisApplication.redisServerCache.add(serverInfo);
-
+		IRedisClient redisClient = new RedisClient(serverInfo);
+		RedisApplication.redisTemplatesMap.put(serverInfo.getName(), redisClient);
 		// initRedisKeysCache(redisTemplate, serverInfo.getName());
 
 		RedisZtreeUtil.initRedisNavigateZtree(serverInfo.getName());

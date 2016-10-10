@@ -1,5 +1,7 @@
 package com.mauersu.redis;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface IRedisClient {
@@ -47,4 +49,42 @@ public interface IRedisClient {
 	public boolean hexists(String key, String field);
 
 	public Set<String> keys(final String pattern);
+
+	public String type(final String key);
+
+	public void rightPushAll(String key, String[] values);
+
+	public void sadd(String key, String... values);
+
+	public void zadd(String key, Set values);
+
+	public void zadd(String key, String value, double score);
+
+	public void hmset(String key, Map values);
+
+	public List<Object> lrange(String key, int start, int end);
+
+	public List<Object> srandmembers(String key, int count);
+
+	public Set zrangebyscore(String key, int start, int end);
+
+	public Map hgetall(String key);
+
+	public void del(String... keys);
+
+	public void hdel(String key, List<String> hashKeys);
+
+	public void hset(String key, String field, String value);
+
+	public void srem(String key, String... fields);
+
+	public void zrem(String key, String... fields);
+
+	public Object lpop(String key);
+
+	public Object rpop(String key);
+
+	public void lpush(String key, String... values);
+	
+	public void rpush(String key, String... values);
 }

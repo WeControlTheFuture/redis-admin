@@ -13,7 +13,7 @@ public class RedisTemplateFactory extends RedisApplication {
 	
 	private static Log log = LogFactory.getLog(RedisTemplateFactory.class);
 	
-	protected static IRedisClient getRedisTemplate(String redisName) {
+	public IRedisClient getRedisTemplate(String redisName) {
 		IRedisClient redisTemplate = redisTemplatesMap.get(redisName);
 		if(redisTemplate==null) {
 			log.error("redisTemplate==null" + ". had not connected to " + redisName + " this redis server now.");
