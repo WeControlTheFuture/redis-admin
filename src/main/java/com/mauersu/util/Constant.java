@@ -14,14 +14,14 @@ import com.mauersu.util.ztree.ZNode;
 public interface Constant {
 
 	public static final Map<String, IRedisClient> redisTemplatesMap = new HashMap<String, IRedisClient>();
-	public static final Map<String, CopyOnWriteArrayList<String>> redisKeysListMap = new HashMap<String, CopyOnWriteArrayList<String>>();
+	public static final Map<String, CopyOnWriteArrayList<RKey>> redisKeysListMap = new HashMap<String, CopyOnWriteArrayList<RKey>>();
 	public static final Map<RKey, Object> redisVMCache = new ConcurrentHashMap<RKey, Object>();
 	public static final CopyOnWriteArrayList<ZNode> redisNavigateZtree = new CopyOnWriteArrayList<ZNode>();
 	public static final CopyOnWriteArrayList<ServerInfo> redisServerCache = new CopyOnWriteArrayList<ServerInfo>();
 
 	public static final int DEFAULT_ITEMS_PER_PAGE = 10;
 	public static final String DEFAULT_REDISKEY_SEPARATOR = ":";
-	public static final int REDIS_DEFAULT_DB_SIZE = 15;
+	public static final int REDIS_DEFAULT_DB_SIZE = 1;
 	public static final String DEFAULT_SEPARATOR = "_";
 	public static final String UTF_8 = "utf-8";
 

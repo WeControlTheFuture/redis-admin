@@ -1,7 +1,6 @@
 package com.mauersu.service.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -12,6 +11,7 @@ import org.springframework.util.StringUtils;
 import com.mauersu.redis.IRedisClient;
 import com.mauersu.service.ViewService;
 import com.mauersu.util.Constant;
+import com.mauersu.util.ConvertUtil;
 import com.mauersu.util.Pagination;
 import com.mauersu.util.RKey;
 import com.mauersu.util.RedisApplication;
@@ -91,7 +91,7 @@ public class ViewServiceImpl extends RedisApplication implements ViewService, Co
 
 	private void refreshKeys(String serverName, int dbIndex) {
 		IRedisClient redisTemplate = RedisApplication.redisTemplatesMap.get(serverName);
-		initRedisKeysCache(redisTemplate, serverName, dbIndex);
+		// initRedisKeysCache(redisTemplate, serverName, dbIndex);
 	}
 
 	private Set<ZNode> refreshServerTree(String serverName, int dbIndex) {
@@ -100,34 +100,19 @@ public class ViewServiceImpl extends RedisApplication implements ViewService, Co
 	}
 
 	@Override
-	public Set<String> getRedisKeys(Pagination pagination, String serverName, String dbIndex, String[] keyPrefixs,
+	public Set<RKey> getRedisKeys(Pagination pagination, String serverName, String dbIndex, String[] keyPrefixs,
 			String queryKey, String queryValue) {
-		List<String> allRedisKeys = redisKeysListMap.get(serverName + DEFAULT_SEPARATOR + dbIndex);
 
-		Set<String> resultRedisKeys = null;
-
-		if (allRedisKeys == null || allRedisKeys.size() == 0) {
-			pagination.setMaxentries(0);
-			resultRedisKeys = new TreeSet<String>();
-			return resultRedisKeys;
-		}
+		Set<RKey> resultRedisKeys = null;
 
 		if (keyPrefixs == null || keyPrefixs.length == 0) {
 			logCurrentTime("keyPrefixs == null");
-			if (StringUtils.isEmpty(queryValue)) {
-				logCurrentTime("new TreeSet<RKey>(allRedisKeys);");
-				int toIndex = pagination.getToIndex() > allRedisKeys.size() ? allRedisKeys.size()
-						: pagination.getToIndex();
-				List<String> resultList = allRedisKeys.subList(pagination.getFromIndex(), toIndex);
-				resultRedisKeys = new TreeSet<String>(resultList);
-				pagination.setMaxentries(allRedisKeys.size());
-			} else {
-				List<String> queryRedisKeys = getQueryRedisKeys(allRedisKeys, queryKey, queryValue);
-				Collections.sort(queryRedisKeys);// arraylist sort
+			if (!StringUtils.isEmpty(queryValue)) {
+				List<RKey> queryRedisKeys = getQueryRedisKeys(redisTemplatesMap.get(serverName), queryKey, queryValue);
 				int toIndex = pagination.getToIndex() > queryRedisKeys.size() ? queryRedisKeys.size()
 						: pagination.getToIndex();
-				List<String> resultList = queryRedisKeys.subList(pagination.getFromIndex(), toIndex);
-				resultRedisKeys = new TreeSet<String>(resultList);
+				List<RKey> resultList = queryRedisKeys.subList(pagination.getFromIndex(), toIndex);
+				resultRedisKeys = new TreeSet<RKey>(resultList);
 				pagination.setMaxentries(queryRedisKeys.size());
 			}
 		} else {
@@ -135,49 +120,45 @@ public class ViewServiceImpl extends RedisApplication implements ViewService, Co
 			for (String prefix : keyPrefixs) {
 				keyPrefix.append(prefix).append(DEFAULT_REDISKEY_SEPARATOR);
 			}
-			List<String> conformRedisKeys = getConformRedisKeys(allRedisKeys, keyPrefix.toString());
-			Collections.sort(conformRedisKeys);// arraylist sort
+			List<RKey> conformRedisKeys = getConformRedisKeys(redisTemplatesMap.get(serverName), keyPrefix.toString());
 			int toIndex = pagination.getToIndex() > conformRedisKeys.size() ? conformRedisKeys.size()
 					: pagination.getToIndex();
-			List<String> resultList = conformRedisKeys.subList(pagination.getFromIndex(), toIndex);
-			resultRedisKeys = new TreeSet<String>(resultList);
+			List<RKey> resultList = conformRedisKeys.subList(pagination.getFromIndex(), toIndex);
+			resultRedisKeys = new TreeSet<RKey>(resultList);
 			pagination.setMaxentries(conformRedisKeys.size());
 		}
 		return resultRedisKeys;
 	}
 
-	private List<String> getQueryRedisKeys(List<String> allRedisKeys, String queryKey, String queryValue) {
-		List<String> rKeySet = new ArrayList<String>();
-		for (String rKey : allRedisKeys) {
-			switch (queryKey) {
-			case MIDDLE_KEY:
-				if (rKey.contains(queryValue)) {
-					rKeySet.add(rKey);
-				}
-				break;
-			case HEAD_KEY:
-				if (rKey.startsWith(queryValue)) {
-					rKeySet.add(rKey);
-				}
-				break;
-			case TAIL_KEY:
-				if (rKey.endsWith(queryValue)) {
-					rKeySet.add(rKey);
-				}
-				break;
-			}
+	protected List<RKey> getRedisKeys(IRedisClient redisClient, String pattern) {
+		Set<String> keysSet = redisClient.keys(pattern);
+		List<RKey> tempList = new ArrayList<RKey>();
+		ConvertUtil.convertByteToString(redisClient, keysSet, tempList);
+		return tempList;
+	}
+
+	private List<RKey> getQueryRedisKeys(IRedisClient redisClient, String queryKey, String queryValue) {
+		List<RKey> rKeySet = new ArrayList<RKey>();
+		switch (queryKey) {
+		case MIDDLE_KEY:
+			return getRedisKeys(redisClient, "*" + queryValue + "*");
+		case HEAD_KEY:
+			return getRedisKeys(redisClient, queryValue + "*");
+		case TAIL_KEY:
+			return getRedisKeys(redisClient, "*" + queryValue);
 		}
 		return rKeySet;
 	}
 
-	private List<String> getConformRedisKeys(List<String> allRedisKeys, String keyPrefix) {
-		List<String> rKeySet = new ArrayList<String>();
-		for (String rKey : allRedisKeys) {
-			if (rKey.startsWith(keyPrefix)) {
-				rKeySet.add(rKey);
-			}
-		}
-		return rKeySet;
+	private List<RKey> getConformRedisKeys(IRedisClient redisClient, String keyPrefix) {
+		// List<RKey> allRedisKeys = getRedisKeys(redisClient);
+		// List<RKey> rKeySet = new ArrayList<RKey>();
+		// for (RKey rKey : allRedisKeys) {
+		// if (rKey.startsWith(keyPrefix)) {
+		// rKeySet.add(rKey);
+		// }
+		// }
+		return getRedisKeys(redisClient, keyPrefix + "*");
 	}
 
 	@Override

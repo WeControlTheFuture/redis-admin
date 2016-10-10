@@ -20,6 +20,7 @@ import com.mauersu.util.Constant;
 import com.mauersu.util.ConvertUtil;
 import com.mauersu.util.Pagination;
 import com.mauersu.util.QueryEnum;
+import com.mauersu.util.RKey;
 import com.mauersu.util.RedisApplication;
 import com.mauersu.util.ztree.ZNode;
 
@@ -39,9 +40,11 @@ public class RedisController extends RedisApplication implements Constant {
 	@RequestMapping(method = RequestMethod.GET)
 	public Object home(HttpServletRequest request, HttpServletResponse response) {
 		String defaultServerName = "";
-		if (CollectionUtils.isEmpty(RedisApplication.redisServerCache)
+		if (!CollectionUtils.isEmpty(RedisApplication.redisServerCache)
 				&& RedisApplication.redisServerCache.get(0) != null)
 			defaultServerName = RedisApplication.redisServerCache.get(0).getName();
+		System.out.println("redisServerCache size=====================" + redisServerCache.size());
+		System.out.println("defaultServerName is---------------------" + defaultServerName);
 		request.setAttribute("serverName", defaultServerName);
 		request.setAttribute("dbIndex", DEFAULT_DBINDEX);
 		return "redirect:/redis/stringList/" + defaultServerName + "/" + DEFAULT_DBINDEX;
@@ -119,7 +122,7 @@ public class RedisController extends RedisApplication implements Constant {
 	public Object stringList(HttpServletRequest request, HttpServletResponse response, @PathVariable String serverName,
 			@PathVariable String dbIndex) {
 
-		refreshByMode();
+//		refreshByMode();
 
 		String queryKey = StringUtil.getParameterByDefault(request, "queryKey", MIDDLE_KEY);
 		String queryKey_ch = QueryEnum.valueOf(queryKey).getQueryKeyCh();
@@ -131,7 +134,7 @@ public class RedisController extends RedisApplication implements Constant {
 		Pagination pagination = stringListPagination(request, queryKey, queryKey_ch, queryValue, queryByKeyPrefixs);
 
 		logCurrentTime("viewService.getRedisKeys start");
-		Set<String> redisKeys = viewService.getRedisKeys(pagination, serverName, dbIndex, keyPrefixs, queryKey,
+		Set<RKey> redisKeys = viewService.getRedisKeys(pagination, serverName, dbIndex, keyPrefixs, queryKey,
 				queryValue);
 		logCurrentTime("viewService.getRedisKeys end");
 		request.setAttribute("redisServers", redisServerCache);

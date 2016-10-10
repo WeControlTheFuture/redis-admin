@@ -130,31 +130,31 @@ public abstract class RedisApplication implements Constant {
 		RedisApplication.redisServerCache.add(serverInfo);
 		IRedisClient redisClient = new RedisClient(serverInfo);
 		RedisApplication.redisTemplatesMap.put(serverInfo.getName(), redisClient);
-		// initRedisKeysCache(redisTemplate, serverInfo.getName());
+//		initRedisKeysCache(redisClient, serverInfo.getName());
 
 		RedisZtreeUtil.initRedisNavigateZtree(serverInfo.getName());
 	}
-
-	private void initRedisKeysCache(IRedisClient redisClient, String name) {
-		for (int i = 0; i <= REDIS_DEFAULT_DB_SIZE; i++) {
-			initRedisKeysCache(redisClient, name, i);
-		}
-	}
-
-	protected void initRedisKeysCache(IRedisClient redisClient, String serverName, int dbIndex) {
-		// RedisConnection connection =
-		// RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
-		// connection.select(dbIndex);
-		Set<String> keysSet = redisClient.keys("*");
-		// connection.close();
-		// List<RKey> tempList = new ArrayList<RKey>();
-		// ConvertUtil.convertByteToString(connection, keysSet, tempList);
-		// Collections.sort(tempList);
-		CopyOnWriteArrayList<String> redisKeysList = new CopyOnWriteArrayList<String>(keysSet);
-		if (redisKeysList.size() > 0) {
-			redisKeysListMap.put(serverName + DEFAULT_SEPARATOR + dbIndex, redisKeysList);
-		}
-	}
+//
+//	private void initRedisKeysCache(IRedisClient redisClient, String name) {
+//		for (int i = 0; i <= REDIS_DEFAULT_DB_SIZE; i++) {
+//			initRedisKeysCache(redisClient, name, i);
+//		}
+//	}
+//
+//	protected void initRedisKeysCache(IRedisClient redisClient, String serverName, int dbIndex) {
+//		// RedisConnection connection =
+//		// RedisConnectionUtils.getConnection(redisTemplate.getConnectionFactory());
+//		// connection.select(dbIndex);
+//		Set<String> keysSet = redisClient.keys("*");
+//		// connection.close();
+//		List<RKey> tempList = new ArrayList<RKey>();
+//		ConvertUtil.convertByteToString(redisClient, keysSet, tempList);
+////		Collections.sort(tempList);
+//		CopyOnWriteArrayList<RKey> redisKeysList = new CopyOnWriteArrayList<RKey>(tempList);
+//		if (redisKeysList.size() > 0) {
+//			redisKeysListMap.put(serverName + DEFAULT_SEPARATOR + dbIndex, redisKeysList);
+//		}
+//	}
 
 	protected static void logCurrentTime(String code) {
 		log.debug("       code:" + code + "        当前时间:" + System.currentTimeMillis());

@@ -46,13 +46,13 @@ public class ObjectJedisFactory implements PooledObjectFactory<ObjectJedis> {
 	}
 
 	public void activateObject(PooledObject<ObjectJedis> pooledJedis) throws Exception {
-		BinaryJedis jedis = (BinaryJedis) pooledJedis.getObject();
+		ObjectJedis jedis = (ObjectJedis) pooledJedis.getObject();
 		if (jedis.getDB().longValue() != this.database)
 			jedis.select(this.database);
 	}
 
 	public void destroyObject(PooledObject<ObjectJedis> pooledJedis) throws Exception {
-		BinaryJedis jedis = (BinaryJedis) pooledJedis.getObject();
+		ObjectJedis jedis = (ObjectJedis) pooledJedis.getObject();
 		if (!(jedis.isConnected()))
 			return;
 		try {
@@ -67,7 +67,7 @@ public class ObjectJedisFactory implements PooledObjectFactory<ObjectJedis> {
 
 	public PooledObject<ObjectJedis> makeObject() throws Exception {
 		HostAndPort hostAndPort = (HostAndPort) this.hostAndPort.get();
-		Jedis jedis = new Jedis(hostAndPort.getHost(), hostAndPort.getPort(), this.connectionTimeout, this.soTimeout);
+		ObjectJedis jedis = new ObjectJedis(hostAndPort.getHost(), hostAndPort.getPort(), this.connectionTimeout, this.soTimeout);
 		try {
 			jedis.connect();
 			if (null != this.password) {
